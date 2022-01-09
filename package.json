@@ -1,0 +1,18 @@
+{
+  "name": "googleSheetsTestig",
+  "version": "1.0.0",
+  "description": "Google Sheets Testing",
+  "main": "index.js",
+  "scripts": {
+    "test": "node index"
+  },
+  "keywords": [
+    "Google",
+    "Sheets"
+  ],
+  "author": "alexaur97",
+  "license": "ISC",
+  "dependencies": {
+    "googleapis": "^39.2.0"
+  }
+}
