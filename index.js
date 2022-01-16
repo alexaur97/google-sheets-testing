@@ -1,81 +1,55 @@
 const fs = require('fs');
-const readline = require('readline');
 const {google} = require('googleapis');
+const {authorize} = require('./auth/auth.js');
+const config = require('./config.json');
 
-const SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
-const TOKEN_PATH = 'token.json';
-
-fs.readFile('credentials.json', (err, content) => {
-  console.log("======================");
+fs.readFile('credentials/credentials.json', (err, content) => {
   if (err) return console.log('Error loading client secret file:', err);
-  authorize(JSON.parse(content), listMajors);
+  authorize(JSON.parse(content), retrieveData);
 });
 
-function authorize(credentials, callback) {
-  const {client_secret, client_id, redirect_uris} = credentials.installed;
-  const oAuth2Client = new google.auth.OAuth2(
-      client_id, client_secret, redirect_uris[0]);
+/*
+1) recorrer constants.json:
+  1.1) introducir en array todas las constantes que cumplan el formato
+  1.2) ordenar array en función de la hoja
+2) Por cada hoja:
+  2.1) Obtener celda (x,y)
+  2.2) actualizar en constant.json
 
-  fs.readFile(TOKEN_PATH, (err, token) => {
-    if (err) return getNewToken(oAuth2Client, callback);
-    oAuth2Client.setCredentials(JSON.parse(token));
-    callback(oAuth2Client);
-  });
-}
+*/
+const constantFile = './constant.json';
+const constants = require(constantFile);
+const filteredConstants = Object.keys(constants)
+  .filter(key => key.includes('!'));
 
-function getNewToken(oAuth2Client, callback) {
-  const authUrl = oAuth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: SCOPES,
-  });
-  console.log('Authorize this app by visiting this url:', authUrl);
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-  rl.question('Enter the code from that page here: ', (code) => {
-    rl.close();
-    oAuth2Client.getToken(code, (err, token) => {
-      if (err) return console.error('Error while trying to retrieve access token', err);
-      oAuth2Client.setCredentials(token);
-      // Store the token to disk for later program executions
-      fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
-        if (err) return console.error(err);
-        console.log('Token stored to', TOKEN_PATH);
-      });
-      callback(oAuth2Client);
-    });
-  });
-}
-
-function listMajors(auth) {
+function retrieveData(auth) {
   const sheets = google.sheets({version: 'v4', auth});
-  sheets.spreadsheets.values.get({
-    spreadsheetId: '1gYi65M7vKQyyKFpxekZ1N-H9GTF2d0Uuw_5pDjLSVqY',
-    range: 'Hoja 1!A:C',
-    majorDimension: 'COLUMNS'
+  sheets.spreadsheets.values.batchGet({
+    spreadsheetId: config.sheet_id,
+    ranges: filteredConstants
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
-    const sheetData = res.data.values;
-    const payloadsColumn = sheetData[0];
-    const languageColumns = sheetData.slice(1);
-    const responseName = 'BLABLA2%EN';
-    const trimmed = responseName.split('%');
-    const row = payloadsColumn.indexOf(trimmed[0]);
-    const cell = filterColumn(languageColumns, trimmed[1], row);
+    const sheetData = res.data.valueRanges;
     if (sheetData.length) {
-        console.log(cell);
+      sheetData.forEach((item) => {
+        constants[item.range] = item.values[0][0];
+        console.log(`[*] Replaced "${constants[item.range]}" with "${item.values[0][0]}"\n`);
+      });
+      fs.writeFile(constantFile, JSON.stringify(constants,null,2), (err) => {
+        if (err) throw err;
+        console.log(`[SUCCESS] Saved ${constantFile}`);
+      });
     } else {
       console.log('No data found.');
     }
   });
 
-  function filterColumn(columns, lang, rowNum){
-      for (let i = 0; i<columns.length; i++){
-          if(columns[i][0] === lang){
-            let cell = columns[i][rowNum];
-            return cell;
-          }
-      }
-  }
+  // function filterColumn(columns, lang, rowNum){
+  //   for (let i = 0; i<columns.length; i++){
+  //     if(columns[i][0] === lang){
+  //       let cell = columns[i][rowNum];
+  //       return cell;
+  //     }
+  //   }
+  //}
 }

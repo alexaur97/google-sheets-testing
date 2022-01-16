@@ -1,3 +1,11 @@
 {
-    "tel1":""
+  "saludo": "hola",
+  "tel1": "123456789",
+  "orderStatus!D3": "<p><s>Para ayudarte con tu petición, necesito el teléfono asociado a la compra.</s></p>",
+  "orderStatus!E4": "<p><s>I see there is more than one order associated with this phone number. Please listen carefully, I am going to list each order, so that you can select one of them ${phraseList}.</s></p>",
+  "tel2": "1999999996789",
+  "orderStatus!D8": "<p><s>, el más reciente, realizado ${purchaseDate} por un importe de ${totalPrice}</s></p>",
+  "tel3": "1111167",
+  "cancelOrder!D3": "<p><s>¿Te gustaría cancelar alguno de estos pedidos? Si es así</s></p>",
+  "cancelOrder!E4": "<p><s>I see there is an order associated with this phone number.</s></p>"
 }
